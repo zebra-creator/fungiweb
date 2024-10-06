@@ -1,12 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import * as React from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet.markercluster/dist/MarkerCluster.css";
-import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import L from "leaflet";
-import "leaflet.markercluster";
 import Image from "next/image";
 
 // Create a custom red dot icon using inline SVG
@@ -18,36 +14,9 @@ const redDotIcon = new L.Icon({
       <circle cx="6" cy="6" r="6" fill="red" />
     </svg>
   `),
-  iconSize: [12, 12], // Adjust the size as needed
+  iconSize: [10, 10], // Adjust the size as needed
   iconAnchor: [6, 6], // Adjust the anchor point as needed
 });
-
-// Custom MarkerClusterGroup component
-import { ReactNode } from "react";
-function MarkerClusterGroup({ children }: { children: ReactNode[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    const markers = L.markerClusterGroup();
-    map.addLayer(markers);
-
-    React.Children.forEach(children, (child) => {
-      if (L.Marker.prototype.isPrototypeOf(child)) {
-        markers.addLayer(child);
-      } else if (React.isValidElement(child)) {
-        const { position, ...options } = child.props;
-        const marker = L.marker(position, options);
-        markers.addLayer(marker);
-      }
-    });
-
-    return () => {
-      map.removeLayer(markers);
-    };
-  }, [map, children]);
-
-  return null;
-}
 
 export default function Home() {
   const [startDate, setStartDate] = useState(new Date());
@@ -57,8 +26,8 @@ export default function Home() {
       distance: String;
       date: String;
       species: string;
-      lat: Number;
-      lng: Number;
+      lat: number;
+      lng: number;
     }[]
   >([
     {
@@ -77,7 +46,7 @@ export default function Home() {
     },
   ]);
   const [requests, setRequests] = useState<
-    { date: String; species: string; lat: Number; lng: Number }[]
+    { date: String; species: string; lat: number; lng: number }[]
   >([
     {
       date: "2023-10-03",
@@ -116,19 +85,17 @@ export default function Home() {
           style={{ height: "100px", width: "100%" }}
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <MarkerClusterGroup>
-            {mushroomData.map((mushroom, index) => (
-              <Marker
-                key={index}
-                position={[mushroom.lat, mushroom.lng]}
-                icon={redDotIcon}
-              >
-                <Popup>
-                  {mushroom.species} <br /> {mushroom.date}
-                </Popup>
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
+          {mushroomData.map((mushroom, index) => (
+            <Marker
+              key={index}
+              position={[mushroom.lat, mushroom.lng]}
+              icon={redDotIcon}
+            >
+              <Popup>
+                {mushroom.species} <br /> {mushroom.date}
+              </Popup>
+            </Marker>
+          ))}
         </MapContainer>
         <div className="absolute top-4 right-4 flex flex-col gap-2">
           <button
