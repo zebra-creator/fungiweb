@@ -1,8 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import "leaflet-toolbar";
+import "leaflet-toolbar/dist/leaflet.toolbar.css";
+
+// Extend the L object to include Toolbar2
+declare module "leaflet" {
+  namespace Toolbar2 {
+    class Control extends L.Control {
+      constructor(options?: any);
+    }
+    class Action extends L.Handler {
+      constructor(options?: any);
+    }
+  }
+}
+import "leaflet-toolbar/dist/leaflet.toolbar.css";
 import Image from "next/image";
 
 // Create a custom red dot icon using inline SVG
@@ -17,6 +32,62 @@ const redDotIcon = new L.Icon({
   iconSize: [10, 10], // Adjust the size as needed
   iconAnchor: [6, 6], // Adjust the anchor point as needed
 });
+
+const ToolbarControl = ({
+  shiftDateRange,
+}: {
+  shiftDateRange: (days: number) => void;
+}) => {
+  const map = useMap();
+  useEffect(() => {
+    const toolbar = new L.Toolbar2.Control({
+      position: "topright",
+      actions: [
+        L.Toolbar2.Action.extend({
+          options: {
+            toolbarIcon: {
+              html: '<img src="/calendar-icon.svg" alt="Calendar" width="24" height="24"/>',
+              tooltip: "Open calendar modal",
+            },
+          },
+          addHooks: function () {
+            // Open calendar modal
+          },
+        }),
+        L.Toolbar2.Action.extend({
+          options: {
+            toolbarIcon: {
+              html: '<img src="/minus-icon.svg" alt="Minus" width="24" height="24"/>',
+              tooltip: "Shift date range back",
+            },
+          },
+          addHooks: function () {
+            shiftDateRange(-1);
+          },
+        }),
+        L.Toolbar2.Action.extend({
+          options: {
+            toolbarIcon: {
+              html: '<img src="/plus-icon.svg" alt="Plus" width="24" height="24"/>',
+              tooltip: "Shift date range forward",
+            },
+          },
+          addHooks: function () {
+            shiftDateRange(1);
+          },
+        }),
+      ],
+    });
+
+    map.addControl(toolbar);
+
+    return () => {
+      map.removeControl(toolbar);
+    };
+  }, [map, shiftDateRange]);
+
+  return null;
+};
 
 export default function Home() {
   const [startDate, setStartDate] = useState(new Date());
@@ -67,6 +138,7 @@ export default function Home() {
     // setMushroomData(fetchedData);
     // setRequests(fetchedRequests);
   }, [startDate, endDate]);
+
   const shiftDateRange = (days: number) => {
     setStartDate(
       (prevDate) => new Date(prevDate.setDate(prevDate.getDate() + days))
@@ -82,7 +154,7 @@ export default function Home() {
         <MapContainer
           center={[51.505, -0.09] as [number, number]}
           zoom={13}
-          style={{ height: "100px", width: "100%" }}
+          style={{ height: "200px", width: "100%" }}
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {mushroomData.map((mushroom, index) => (
@@ -96,37 +168,8 @@ export default function Home() {
               </Popup>
             </Marker>
           ))}
+          <ToolbarControl shiftDateRange={shiftDateRange} />
         </MapContainer>
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <button
-            onClick={() => {
-              /* Open calendar modal */
-            }}
-          >
-            <Image
-              src="/calendar-icon.svg"
-              alt="Calendar"
-              width={24}
-              height={24}
-            />
-          </button>
-          <button onClick={() => shiftDateRange(-1)}>
-            <Image src="/minus-icon.svg" alt="Minus" width={24} height={24} />
-          </button>
-          <button onClick={() => shiftDateRange(1)}>
-            <Image src="/plus-icon.svg" alt="Plus" width={24} height={24} />
-          </button>
-        </div>
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
         <div style={{ background: "white" }}>
           <Image
             src="/calendar-icon.svg"
